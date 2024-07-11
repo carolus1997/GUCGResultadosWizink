@@ -44,19 +44,109 @@ function showChart() {
     drawRadarChart(data, labels);
 }
 
-function generatePDF() {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
+function printReport() {
+    // Actualiza el gráfico con los datos reales antes de generar el informe
+    updateChartWithRealData();
 
-    doc.text("Informe de Evaluación", 10, 10);
-    doc.text("Resultados de la práctica", 10, 20);
+    const printWindow = window.open('', '', 'height=800,width=1000');
+    printWindow.document.write('<html><head><title>Informe de Evaluación</title>');
+    printWindow.document.write('<style>');
+    printWindow.document.write('body { font-family: Arial, sans-serif; padding: 20px; }');
+    printWindow.document.write('h4 { margin-top: 20px; border-bottom: 1px solid #000; padding-bottom: 5px; }');
+    printWindow.document.write('p { margin-left: 20px; }');
+    printWindow.document.write('.annotationBox { width: 95%; height: 50px; border: 1px solid #ccc; background-color: #f0f0f0; margin: 10px auto 20px; padding: 10px; }');
+    printWindow.document.write('.selectedAnswer { color: blue; }');
+    printWindow.document.write('.correctAnswer { color: green; }');
+    printWindow.document.write('.incorrectAnswer { color: red; }');
+    printWindow.document.write('</style>');
+    printWindow.document.write('</head><body>');
+
+    printWindow.document.write('<h1>Informe de Evaluación Equipo 1</h1>');
+    printWindow.document.write('<h2>Resultados de la práctica</h2>');
 
     // Obtener la imagen del gráfico de radar
     const canvas = document.getElementById("radarChart");
     const imgData = canvas.toDataURL("image/png");
-    doc.addImage(imgData, 'PNG', 10, 30, 180, 160);
+    printWindow.document.write('<div><img src="' + imgData + '" width="400" height="400"/></div>');
 
-    doc.save("informe_evaluacion.pdf");
+    // Añadir preguntas, respuestas seleccionadas y correctas
+    const correctAnswers = {
+        "Mando": ["La UCO del Wizink Center y la comisaria de Policía Nacional Barrio de Ventas"],
+        "Situacion": ["Redes Sociales y Televisión", "Patrullas de policía nacional y local en zona", "Centro de coordinación emergencias 112"],
+        "Decision": ["Coordinación entre UCO Wizink y Policía Nacional", "Informar desde UCO wizink que personas no salgan a la calle y mantengan la cama", "Activación del plan ante atentados, cierre de zona y envío de unidades especiales"],
+        "Comunicacion": ["Se debe realizar declaración institucional por el Ministro del Interior", "Se informa de activación de plan antiterrorista y llamada a la colaboración ", "Se informa de activación del Ejército"]
+    };
+
+    const selectedAnswers = {
+        "Mando": selectedAnswersByCategory["Mando"] || [],
+        "Situacion": selectedAnswersByCategory["Situacion"] || [],
+        "Decision": selectedAnswersByCategory["Decision"] || [],
+        "Comunicacion": selectedAnswersByCategory["Comunicacion"] || []
+    };
+
+    const sections = ['Mando', 'Situacion', 'Decision', 'Comunicacion'];
+    sections.forEach(section => {
+        printWindow.document.write('<h4>' + section + '</h4>');
+
+        printWindow.document.write('<h5>Respuestas Seleccionadas</h5>');
+        selectedAnswers[section].forEach(answer => {
+            const isCorrect = correctAnswers[section].includes(answer);
+            const answerClass = isCorrect ? 'correctAnswer' : 'incorrectAnswer';
+            printWindow.document.write('<p class="' + answerClass + '">- ' + answer + '</p>');
+        });
+
+        printWindow.document.write('<h5>Respuestas Correctas</h5>');
+        correctAnswers[section].forEach(answer => {
+            printWindow.document.write('<p class="correctAnswer">- ' + answer + '</p>');
+        });
+
+        const correctCount = selectedAnswers[section].filter(answer => correctAnswers[section].includes(answer)).length;
+        const score = (correctCount / correctAnswers[section].length) * 100;
+        printWindow.document.write('<p><b>Porcentaje de Idoneidad: ' + score.toFixed(2) + '%</b></p>');
+    });
+
+    const totalSuitability = calculateTotalSuitability();
+    printWindow.document.write('<h3><b>Idoneidad Total: ' + totalSuitability.toFixed(2) + '%</b></h3>');
+
+    printWindow.document.write('</body></html>');
+    printWindow.document.close();
+    printWindow.print();
+}
+
+function updateChartWithRealData() {
+    // Datos reales para el gráfico de radar
+    const realData = [
+        calculateScore("Comunicacion"),
+        calculateScore("Situacion"),
+        calculateScore("Decision"),
+        calculateScore("Mando")
+    ];
+    window.myRadarChart.data.datasets[0].data = realData;
+    window.myRadarChart.update();
+}
+
+function calculateScore(category) {
+    const correctAnswers = {
+        "Mando": ["La UCO del Wizink Center y la comisaria de Policía Nacional Barrio de Ventas"],
+        "Situacion": ["Redes Sociales y Televisión", "Patrullas de policía nacional y local en zona", "Centro de coordinación emergencias 112"],
+        "Decision": ["Coordinación entre UCO Wizink y Policía Nacional", "Informar desde UCO wizink que personas no salgan a la calle y mantengan la cama", "Activación del plan ante atentados, cierre de zona y envío de unidades especiales"],
+        "Comunicacion": ["Se debe realizar declaración institucional por el Ministro del Interior", "Se informa de activación de plan antiterrorista y llamada a la colaboración ", "Se informa de activación del Ejército"]
+    };
+
+    const selectedAnswers = selectedAnswersByCategory[category] || [];
+    const correctCount = selectedAnswers.filter(answer => correctAnswers[category].includes(answer)).length;
+    return (correctCount / correctAnswers[category].length) * 100;
+}
+
+function calculateTotalSuitability() {
+    const categories = ["Mando", "Situacion", "Decision", "Comunicacion"];
+    let totalScore = 0;
+
+    categories.forEach(category => {
+        totalScore += calculateScore(category);
+    });
+
+    return totalScore / categories.length;
 }
 
 let selectedAnswersByCategory = {};
@@ -75,7 +165,6 @@ function updateChart(formId, selectedAnswers) {
         "examForm3": "Decision",
         "examForm4": "Comunicacion"
     };
-
     const categoryIndex = {
         "examForm1": 3,
         "examForm2": 1,
