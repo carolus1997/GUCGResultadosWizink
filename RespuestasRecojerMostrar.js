@@ -1,8 +1,8 @@
 document.addEventListener("DOMContentLoaded", function () {
     let selectedAnswersByForm = {};
 
-    // Mapa de respuestas correctas para cada formulario
-    const correctAnswers = {
+    // Mapa de respuestas correctas para cada formulario (nueva variable, para mantener consistencia)
+    const correctAnswersMap = {
         "examForm1": ["La UCO del Wizink Center y la comisaria de Policía Nacional Barrio de Ventas"],
         "examForm2": ["Redes Sociales y Televisión", "Patrullas de policía nacional y local en zona", "Centro de coordinación emergencias 112"],
         "examForm3": ["Coordinación entre UCO Wizink y Policía Nacional", "Informar desde UCO wizink que personas no salgan a la calle y mantengan la cama", "Activación del plan ante atentados, cierre de zona y envío de unidades especiales"],
